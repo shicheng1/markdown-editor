@@ -145,7 +145,7 @@ function AppContent(): React.JSX.Element {
   // Get document directory for image operations
   const getDocDir = useCallback(async (): Promise<string> => {
     if (activeTab?.filePath) {
-      const parts = activeTab.filePath.split(/[\\/]/)
+      const parts = activeTab.filePath.split(/[\/]/)
       parts.pop()
       return parts.join('/') || parts.join('\\')
     }
