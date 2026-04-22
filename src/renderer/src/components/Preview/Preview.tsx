@@ -14,12 +14,14 @@ interface PreviewProps {
 
 const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, ref) => {
   const [defaultDir, setDefaultDir] = useState<string>('')
+  const [documentsDir, setDocumentsDir] = useState<string>('')
 
   useEffect(() => {
     // Always get default directory as fallback
     window.electronAPI?.fs.getDefaultDir().then(result => {
       if (result?.dir) {
         setDefaultDir(result.dir)
+        setDocumentsDir(result.dir)
       }
     })
   }, [])
@@ -54,11 +56,17 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                       possiblePaths.push(`file:///${fullPath}`)
                     }
                     
-                    // Try with current directory
-                    possiblePaths.push(`file:///${src}`)
+                    // Try with current directory (relative path)
+                    possiblePaths.push(`./${src}`)
                     
                     // Try with assets directory in current directory
-                    possiblePaths.push(`file:///assets/${src.split('/').pop()}`)
+                    possiblePaths.push(`./assets/${src.split('/').pop()}`)
+                    
+                    // Try with absolute path to documents directory
+                    if (documentsDir) {
+                      const docFullPath = `${documentsDir.replace(/\\/g, '/')}/${src.replace(/\\/g, '/')}`
+                      possiblePaths.push(`file:///${docFullPath}`)
+                    }
                     
                     // Create an image element that tries multiple sources
                     return (
