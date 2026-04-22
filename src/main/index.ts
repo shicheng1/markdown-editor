@@ -144,6 +144,17 @@ ipcMain.handle('fs:resolveImagePath', async (_event, relativePath: string, docDi
   }
 })
 
+ipcMain.handle('fs:mkdir', async (_event, dirPath: string) => {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true })
+    }
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: String(error) }
+  }
+})
+
 ipcMain.handle('fs:getDefaultDir', async () => {
   return { dir: app.getPath('documents') }
 })

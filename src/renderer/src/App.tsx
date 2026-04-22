@@ -149,13 +149,26 @@ function AppContent(): React.JSX.Element {
       parts.pop()
       return parts.join('/') || parts.join('\\')
     }
+    // 确保返回一个存在且可写的目录
     const result = await window.electronAPI?.fs.getDefaultDir()
-    return result?.dir || '.'
+    if (result?.dir) {
+      // 尝试创建文档目录
+      try {
+        await window.electronAPI?.fs.mkdir(result.dir)
+      } catch (e) {
+        // 目录已存在或创建失败，忽略错误
+      }
+      return result.dir
+    }
+    // 如果文档目录不可用，使用当前工作目录
+    return '.'
   }, [activeTab?.filePath])
 
   // Handle dropped image files
   const handleDropImage = useCallback(async (files: File[]) => {
+    console.log('处理拖放图片:', files)
     const docDir = await getDocDir()
+    console.log('文档目录:', docDir)
     if (!docDir) return
     const api = window.electronAPI
     if (!api || !editorRef.current) return
@@ -163,11 +176,15 @@ function AppContent(): React.JSX.Element {
     for (const file of files) {
       // For dropped files from OS, we have the path via file.path (Electron extends File)
       const filePath = (file as any).path as string | undefined
+      console.log('文件路径:', filePath)
       if (filePath) {
         const result = await api.fs.copyImageToAssets(filePath, docDir)
+        console.log('保存结果:', result)
         if (result.success && result.relativePath) {
           const fileName = result.relativePath.split('/').pop() || 'image'
           editorRef.current.insertText(`\n![${fileName}](${result.relativePath})\n`)
+        } else {
+          console.error('保存失败:', result.error)
         }
       }
     }
