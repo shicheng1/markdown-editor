@@ -213,21 +213,29 @@ function AppContent(): React.JSX.Element {
 
   // Insert image via IPC dialog
   const handleInsertImage = useCallback(async () => {
+    console.log('handleInsertImage 被调用')
     const api = window.electronAPI
     if (!api || !editorRef.current) return
 
     try {
       const result = await api.dialog.openImage()
+      console.log('打开图片对话框结果:', result)
       if (result.canceled || result.filePaths.length === 0) return
 
       const docDir = await getDocDir()
+      console.log('文档目录:', docDir)
       if (!docDir) return
 
       const filePath = result.filePaths[0]
+      console.log('选择的图片文件路径:', filePath)
       const copyResult = await api.fs.copyImageToAssets(filePath, docDir)
+      console.log('复制图片到assets结果:', copyResult)
       if (copyResult.success && copyResult.relativePath) {
         const fileName = copyResult.relativePath.split('/').pop() || 'image'
         editorRef.current.insertText(`\n![${fileName}](${copyResult.relativePath})\n`)
+        console.log('图片链接已插入编辑器')
+      } else {
+        console.error('图片复制失败:', copyResult.error)
       }
     } catch (error) {
       console.error('Failed to insert image:', error)

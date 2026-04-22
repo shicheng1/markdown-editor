@@ -111,9 +111,12 @@ ipcMain.handle('fs:readImageAsBase64', async (_event, filePath: string) => {
 })
 
 ipcMain.handle('fs:copyImageToAssets', async (_event, sourcePath: string, docDir: string) => {
+  console.log('copyImageToAssets 被调用，参数:', { sourcePath, docDir })
   try {
     const assetsDir = join(docDir, 'assets')
+    console.log('assetsDir:', assetsDir)
     if (!fs.existsSync(assetsDir)) {
+      console.log('创建 assets 目录:', assetsDir)
       fs.mkdirSync(assetsDir, { recursive: true })
     }
     let fileName = sourcePath.split(/[\\/]/).pop() || 'image.png'
@@ -127,9 +130,13 @@ ipcMain.handle('fs:copyImageToAssets', async (_event, sourcePath: string, docDir
       destPath = join(assetsDir, fileName)
       counter++
     }
+    console.log('复制文件:', sourcePath, '到:', destPath)
     fs.copyFileSync(sourcePath, destPath)
-    return { success: true, relativePath: `assets/${fileName}` }
+    const relativePath = `assets/${fileName}`
+    console.log('返回相对路径:', relativePath)
+    return { success: true, relativePath }
   } catch (error) {
+    console.error('copyImageToAssets 错误:', error)
     return { success: false, error: String(error) }
   }
 })
