@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -13,6 +13,21 @@ interface PreviewProps {
 }
 
 const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, ref) => {
+  const [defaultDir, setDefaultDir] = useState<string>('')
+
+  useEffect(() => {
+    // Get default directory if docDir is not provided
+    if (!docDir) {
+      window.electronAPI?.fs.getDefaultDir().then(result => {
+        if (result?.dir) {
+          setDefaultDir(result.dir)
+        }
+      })
+    }
+  }, [docDir])
+
+  const effectiveDocDir = docDir || defaultDir
+
   return (
     <div className="preview-container" ref={ref}>
       <div className="preview-content">
@@ -28,8 +43,8 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                   </a>
                 ),
                 img: ({ src, alt, ...props }) => {
-                  if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file://') && docDir) {
-                    const fullPath = `${docDir.replace(/\\/g, '/')}/${src.replace(/\\/g, '/')}`
+                  if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file://') && effectiveDocDir) {
+                    const fullPath = `${effectiveDocDir.replace(/\\/g, '/')}/${src.replace(/\\/g, '/')}`
                     const fileUrl = `file:///${fullPath}`
                     return <img src={fileUrl} alt={alt || ''} loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} {...props} />
                   }
