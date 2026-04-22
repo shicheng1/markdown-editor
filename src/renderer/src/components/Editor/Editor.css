@@ -1,0 +1,108 @@
+.editor-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-codemirror {
+  flex: 1;
+  height: 100%;
+  font-size: 14px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  line-height: 1.6;
+}
+
+.editor-codemirror .cm-editor {
+  height: 100%;
+  background: var(--editor-bg);
+}
+
+.editor-codemirror .cm-scroller {
+  overflow: auto;
+  font-family: inherit;
+}
+
+.editor-codemirror .cm-content {
+  padding: 16px 0;
+  caret-color: var(--editor-cursor);
+}
+
+.editor-codemirror .cm-cursor {
+  border-left-color: var(--editor-cursor);
+  border-left-width: 2px;
+}
+
+.editor-codemirror .cm-selectionBackground,
+.editor-codemirror .cm-focused .cm-selectionBackground {
+  background: var(--editor-selection);
+}
+
+.editor-codemirror .cm-activeLine {
+  background: var(--editor-line-highlight);
+}
+
+.editor-codemirror .cm-gutters {
+  background: var(--editor-gutter);
+  border-right: 1px solid var(--border-light);
+  color: var(--text-tertiary);
+}
+
+.editor-codemirror .cm-activeLineGutter {
+  background: var(--editor-line-highlight);
+  color: var(--text-secondary);
+}
+
+.editor-codemirror .cm-line {
+  padding: 0 16px;
+}
+
+.editor-codemirror .cm-foldGutter {
+  width: 16px;
+}
+
+/* Markdown syntax highlighting */
+.editor-codemirror .cm-header-1 { font-size: 1.6em; font-weight: 700; color: var(--accent-color); }
+.editor-codemirror .cm-header-2 { font-size: 1.4em; font-weight: 600; color: var(--accent-color); }
+.editor-codemirror .cm-header-3 { font-size: 1.2em; font-weight: 600; color: var(--accent-color); }
+.editor-codemirror .cm-header-4 { font-size: 1.1em; font-weight: 600; color: var(--accent-color); }
+.editor-codemirror .cm-header-5,
+.editor-codemirror .cm-header-6 { font-weight: 600; color: var(--accent-color); }
+
+.editor-codemirror .cm-strong { font-weight: 700; }
+.editor-codemirror .cm-em { font-style: italic; }
+.editor-codemirror .cm-strikethrough { text-decoration: line-through; }
+
+.editor-codemirror .cm-link { color: var(--preview-link); text-decoration: underline; }
+.editor-codemirror .cm-url { color: var(--text-tertiary); }
+
+.editor-codemirror .cm-meta { color: var(--text-tertiary); }
+.editor-codemirror .cm-comment { color: var(--text-tertiary); }
+
+.editor-codemirror .cm-monospace {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  background: var(--preview-code-bg);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 0.9em;
+}
+
+/* Scrollbar */
+.editor-codemirror .cm-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.editor-codemirror .cm-scroller::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.editor-codemirror .cm-scroller::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+.editor-codemirror .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}

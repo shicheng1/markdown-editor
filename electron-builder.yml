@@ -1,0 +1,21 @@
+appId: com.markdown.editor
+productName: Markdown Editor
+files:
+  - out/**/*
+  - package.json
+win:
+  executableName: markdown-editor
+  target:
+    - nsis
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+mac:
+  target:
+    - dmg
+linux:
+  target:
+    - AppImage
+  category: Utility

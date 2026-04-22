@@ -1,0 +1,313 @@
+/* ============================================
+   Markdown Preview Styles
+   ============================================ */
+
+/* Base typography */
+.markdown-preview {
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.75;
+  word-wrap: break-word;
+}
+
+/* Headings */
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.markdown-preview h1 {
+  font-size: 2em;
+  padding-bottom: 0.3em;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.markdown-preview h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.markdown-preview h3 {
+  font-size: 1.25em;
+}
+
+.markdown-preview h4 {
+  font-size: 1.1em;
+}
+
+.markdown-preview h5 {
+  font-size: 1em;
+}
+
+.markdown-preview h6 {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.markdown-preview h1:first-child,
+.markdown-preview h2:first-child,
+.markdown-preview h3:first-child {
+  margin-top: 0;
+}
+
+/* Paragraphs */
+.markdown-preview p {
+  margin: 0 0 1em 0;
+}
+
+/* Links */
+.markdown-preview a {
+  color: var(--preview-link);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition-fast);
+}
+
+.markdown-preview a:hover {
+  border-bottom-color: var(--preview-link);
+}
+
+/* Bold & Italic */
+.markdown-preview strong {
+  font-weight: 600;
+}
+
+.markdown-preview em {
+  font-style: italic;
+}
+
+.markdown-preview del {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+/* Lists */
+.markdown-preview ul,
+.markdown-preview ol {
+  margin: 0 0 1em 0;
+  padding-left: 2em;
+}
+
+.markdown-preview li {
+  margin-bottom: 0.25em;
+}
+
+.markdown-preview li > ul,
+.markdown-preview li > ol {
+  margin-top: 0.25em;
+  margin-bottom: 0;
+}
+
+.markdown-preview ul {
+  list-style-type: disc;
+}
+
+.markdown-preview ol {
+  list-style-type: decimal;
+}
+
+/* Task list (GFM) */
+.markdown-preview ul:has(input[type="checkbox"]) {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.markdown-preview li:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.markdown-preview input[type="checkbox"] {
+  margin-top: 5px;
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
+/* Blockquote */
+.markdown-preview blockquote {
+  margin: 0 0 1em 0;
+  padding: 0.6em 1.2em;
+  border-left: 4px solid var(--preview-blockquote-border);
+  background: var(--preview-blockquote-bg);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--text-secondary);
+}
+
+.markdown-preview blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview blockquote blockquote {
+  margin-top: 0.75em;
+}
+
+/* Code */
+.markdown-preview code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.875em;
+  background: var(--preview-code-bg);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.markdown-preview pre {
+  margin: 0 0 1em 0;
+  padding: 16px;
+  background: var(--preview-code-bg);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.markdown-preview pre code {
+  display: block;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+
+/* Tables */
+.markdown-preview .table-wrapper {
+  overflow-x: auto;
+  margin: 0 0 1em 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--preview-table-border);
+}
+
+.markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.925em;
+}
+
+.markdown-preview th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--preview-table-border);
+}
+
+.markdown-preview td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--preview-table-border);
+}
+
+.markdown-preview tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-preview tr:nth-child(even) {
+  background: var(--preview-table-stripe);
+}
+
+.markdown-preview tbody tr:hover {
+  background: var(--accent-light);
+}
+
+/* Horizontal rule */
+.markdown-preview hr {
+  margin: 2em 0;
+  border: none;
+  height: 1px;
+  background: var(--border-light);
+}
+
+/* Images */
+.markdown-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  margin: 0.5em 0;
+}
+
+/* Footnotes */
+.markdown-preview sup a {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Definition lists */
+.markdown-preview dt {
+  font-weight: 600;
+  margin-top: 1em;
+}
+
+.markdown-preview dd {
+  margin-left: 2em;
+  margin-bottom: 0.5em;
+}
+
+/* Inline HTML */
+.markdown-preview div,
+.markdown-preview span {
+  /* Allow custom HTML elements to render */
+}
+
+/* Highlight.js dark theme override */
+[data-theme="dark"] .markdown-preview pre code.hljs {
+  background: var(--preview-code-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .markdown-preview pre code .hljs-keyword,
+[data-theme="dark"] .markdown-preview pre code .hljs-selector-tag,
+[data-theme="dark"] .markdown-preview pre code .hljs-literal,
+[data-theme="dark"] .markdown-preview pre code .hljs-section,
+[data-theme="dark"] .markdown-preview pre code .hljs-link {
+  color: #c678dd;
+}
+
+[data-theme="dark"] .markdown-preview pre code .hljs-string,
+[data-theme="dark"] .markdown-preview pre code .hljs-title,
+[data-theme="dark"] .markdown-preview pre code .hljs-name,
+[data-theme="dark"] .markdown-preview pre code .hljs-type,
+[data-theme="dark"] .markdown-preview pre code .hljs-attribute,
+[data-theme="dark"] .markdown-preview pre code .hljs-symbol,
+[data-theme="dark"] .markdown-preview pre code .hljs-bullet,
+[data-theme="dark"] .markdown-preview pre code .hljs-addition,
+[data-theme="dark"] .markdown-preview pre code .hljs-variable,
+[data-theme="dark"] .markdown-preview pre code .hljs-template-tag,
+[data-theme="dark"] .markdown-preview pre code .hljs-template-variable {
+  color: #98c379;
+}
+
+[data-theme="dark"] .markdown-preview pre code .hljs-comment,
+[data-theme="dark"] .markdown-preview pre code .hljs-quote,
+[data-theme="dark"] .markdown-preview pre code .hljs-deletion,
+[data-theme="dark"] .markdown-preview pre code .hljs-meta {
+  color: #5c6370;
+  font-style: italic;
+}
+
+[data-theme="dark"] .markdown-preview pre code .hljs-number,
+[data-theme="dark"] .markdown-preview pre code .hljs-regexp,
+[data-theme="dark"] .markdown-preview pre code .hljs-literal,
+[data-theme="dark"] .markdown-preview pre code .hljs-built_in,
+[data-theme="dark"] .markdown-preview pre code .hljs-type,
+[data-theme="dark"] .markdown-preview pre code .hljs-builtin-name {
+  color: #d19a66;
+}
+
+[data-theme="dark"] .markdown-preview pre code .hljs-title.function_,
+[data-theme="dark"] .markdown-preview pre code .hljs-title.class_ {
+  color: #61afef;
+}
+
+[data-theme="dark"] .markdown-preview pre code .hljs-params {
+  color: #e4e4e7;
+}

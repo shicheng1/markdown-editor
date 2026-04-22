@@ -1,0 +1,31 @@
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  padding: 0 12px;
+  background: var(--statusbar-bg);
+  border-top: 1px solid var(--statusbar-border);
+  font-size: 11px;
+  color: var(--statusbar-text);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.statusbar-left,
+.statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.statusbar-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.8;
+}
+
+.statusbar-theme {
+  opacity: 0.6;
+}
