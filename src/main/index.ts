@@ -156,7 +156,17 @@ ipcMain.handle('fs:mkdir', async (_event, dirPath: string) => {
 })
 
 ipcMain.handle('fs:getDefaultDir', async () => {
-  return { dir: app.getPath('documents') }
+  try {
+    const documentsPath = app.getPath('documents')
+    // 确保目录存在
+    if (!fs.existsSync(documentsPath)) {
+      fs.mkdirSync(documentsPath, { recursive: true })
+    }
+    return { dir: documentsPath }
+  } catch (error) {
+    // 如果获取文档目录失败，返回当前工作目录
+    return { dir: process.cwd() }
+  }
 })
 
 // Window title and dirty state
