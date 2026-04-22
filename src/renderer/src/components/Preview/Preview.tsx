@@ -42,23 +42,42 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                 ),
                 img: ({ src, alt, ...props }) => {
                   if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file://')) {
-                    // Try relative path first
-                    const relativeUrl = src
-                    // Also try with file:// protocol for local files
-                    let fileUrl = src
+                    // Try multiple approaches to find the image
+                    const possiblePaths = []
+                    
+                    // Try relative path
+                    possiblePaths.push(src)
+                    
+                    // Try with effectiveDocDir if available
                     if (effectiveDocDir) {
                       const fullPath = `${effectiveDocDir.replace(/\\/g, '/')}/${src.replace(/\\/g, '/')}`
-                      fileUrl = `file:///${fullPath}`
+                      possiblePaths.push(`file:///${fullPath}`)
                     }
-                    // Use a fallback image that shows the path if loading fails
+                    
+                    // Try with current directory
+                    possiblePaths.push(`file:///${src}`)
+                    
+                    // Try with assets directory in current directory
+                    possiblePaths.push(`file:///assets/${src.split('/').pop()}`)
+                    
+                    // Create an image element that tries multiple sources
                     return (
                       <img 
-                        src={fileUrl} 
+                        src={possiblePaths[0]} 
                         alt={alt || ''} 
                         loading="lazy" 
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
-                          target.src = `data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='100' viewBox='0 0 200 100'%3E%3Crect width='200' height='100' fill='%23f0f0f0'/%3E%3Ctext x='10' y='50' font-family='Arial' font-size='12' fill='%23666'%3EImage not found: ${encodeURIComponent(src)}%3C/text%3E%3C/svg%3E`
+                          const currentSrc = target.src
+                          const currentIndex = possiblePaths.indexOf(currentSrc)
+                          
+                          if (currentIndex < possiblePaths.length - 1) {
+                            // Try next path
+                            target.src = possiblePaths[currentIndex + 1]
+                          } else {
+                            // All paths failed, show error
+                            target.src = `data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='100' viewBox='0 0 200 100'%3E%3Crect width='200' height='100' fill='%23f0f0f0'/%3E%3Ctext x='10' y='50' font-family='Arial' font-size='12' fill='%23666'%3EImage not found: ${encodeURIComponent(src)}%3C/text%3E%3C/svg%3E`
+                          }
                           target.style.display = 'block'
                         }} 
                         {...props} 
