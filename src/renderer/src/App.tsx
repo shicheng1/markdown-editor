@@ -150,7 +150,7 @@ function AppContent(): React.JSX.Element {
       return parts.join('/') || parts.join('\\')
     }
     const result = await window.electronAPI?.fs.getDefaultDir()
-    return result?.dir || process.cwd()
+    return result?.dir || ''
   }, [activeTab?.filePath])
 
   // Handle dropped image files

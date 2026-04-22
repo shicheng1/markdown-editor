@@ -13,7 +13,7 @@ interface PreviewProps {
 }
 
 const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, ref) => {
-  const [defaultDir, setDefaultDir] = useState<string>(process.cwd())
+  const [defaultDir, setDefaultDir] = useState<string>('')
 
   useEffect(() => {
     // Always get default directory as fallback
