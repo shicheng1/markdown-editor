@@ -13,18 +13,16 @@ interface PreviewProps {
 }
 
 const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, ref) => {
-  const [defaultDir, setDefaultDir] = useState<string>('')
+  const [defaultDir, setDefaultDir] = useState<string>(process.cwd())
 
   useEffect(() => {
-    // Get default directory if docDir is not provided
-    if (!docDir) {
-      window.electronAPI?.fs.getDefaultDir().then(result => {
-        if (result?.dir) {
-          setDefaultDir(result.dir)
-        }
-      })
-    }
-  }, [docDir])
+    // Always get default directory as fallback
+    window.electronAPI?.fs.getDefaultDir().then(result => {
+      if (result?.dir) {
+        setDefaultDir(result.dir)
+      }
+    })
+  }, [])
 
   const effectiveDocDir = docDir || defaultDir
 
