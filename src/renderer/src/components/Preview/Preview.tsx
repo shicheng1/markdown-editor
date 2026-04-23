@@ -1,4 +1,4 @@
-import { forwardRef, useState, useEffect } from 'react'
+import React, { forwardRef, useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -44,23 +44,14 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                 ),
                 img: ({ src, alt, ...props }) => {
                   if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file://')) {
-                    // Try multiple approaches to find the image
+                    // Generate all possible paths upfront
                     const possiblePaths = []
                     
-                    // Try relative path
-                    possiblePaths.push(src)
-                    
-                    // Try with effectiveDocDir if available
+                    // Try with effectiveDocDir if available (most likely to work)
                     if (effectiveDocDir) {
                       const fullPath = `${effectiveDocDir.replace(/\\/g, '/')}/${src.replace(/\\/g, '/')}`
                       possiblePaths.push(`file:///${fullPath}`)
                     }
-                    
-                    // Try with current directory (relative path)
-                    possiblePaths.push(`./${src}`)
-                    
-                    // Try with assets directory in current directory
-                    possiblePaths.push(`./assets/${src.split('/').pop()}`)
                     
                     // Try with absolute path to documents directory
                     if (documentsDir) {
@@ -68,31 +59,61 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                       possiblePaths.push(`file:///${docFullPath}`)
                     }
                     
-                    // Create an image element that tries multiple sources
-                    return (
-                      <img 
-                        src={possiblePaths[0]} 
-                        alt={alt || ''} 
-                        loading="lazy" 
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          const currentSrc = target.src
-                          const currentIndex = possiblePaths.indexOf(currentSrc)
-                          
-                          if (currentIndex < possiblePaths.length - 1) {
-                            // Try next path
-                            target.src = possiblePaths[currentIndex + 1]
-                          } else {
-                            // All paths failed, show error
-                            target.src = `data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='100' viewBox='0 0 200 100'%3E%3Crect width='200' height='100' fill='%23f0f0f0'/%3E%3Ctext x='10' y='50' font-family='Arial' font-size='12' fill='%23666'%3EImage not found: ${encodeURIComponent(src)}%3C/text%3E%3C/svg%3E`
-                          }
-                          target.style.display = 'block'
-                        }} 
-                        {...props} 
-                      />
-                    )
+                    // Try relative path
+                    possiblePaths.push(src)
+                    
+                    // Try with current directory (relative path)
+                    possiblePaths.push(`./${src}`)
+                    
+                    // Try with assets directory in current directory
+                    possiblePaths.push(`./assets/${src.split('/').pop()}`)
+                    
+                    // Create a stateful component for handling image loading
+                    const ImageWithFallback = React.memo(({ paths, alt, src, ...imgProps }: { paths: string[]; alt: string; src: string; [key: string]: any }) => {
+                      const [currentIndex, setCurrentIndex] = useState(0)
+                      const [allFailed, setAllFailed] = useState(false)
+                      
+                      const handleError = () => {
+                        if (currentIndex < paths.length - 1) {
+                          setCurrentIndex(prev => prev + 1)
+                        } else {
+                          setAllFailed(true)
+                        }
+                      }
+                      
+                      if (allFailed) {
+                        return (
+                          <div style={{ 
+                            width: '200px', 
+                            height: '100px', 
+                            backgroundColor: '#f0f0f0', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            border: '1px solid #ccc'
+                          }}>
+                            <span style={{ color: '#666', fontSize: '12px' }}>
+                              图片未找到: {src}
+                            </span>
+                          </div>
+                        )
+                      }
+                      
+                      return (
+                        <img 
+                          src={paths[currentIndex]} 
+                          alt={alt || ''} 
+                          loading="lazy" 
+                          onError={handleError}
+                          style={{ display: 'block' }}
+                          {...imgProps} 
+                        />
+                      )
+                    })
+                    
+                    return <ImageWithFallback paths={possiblePaths} alt={alt || ''} src={src} {...props} />
                   }
-                  return <img src={src} alt={alt || ''} loading="lazy" {...props} />
+                  return <img src={src} alt={alt || ''} loading="lazy" style={{ display: 'block' }} {...props} />
                 },
                 table: ({ children, ...props }) => (
                   <div className="table-wrapper">
