@@ -96,14 +96,14 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                       // Handle Windows paths properly
                       let fullPath = effectiveDocDir
                       // Convert backslashes to forward slashes
-                      fullPath = fullPath.replace(/\\/g, '/')
+                      fullPath = fullPath.replace(/[\\]/g, '/')
                       // For Windows paths like C:/Users/...
                       if (fullPath.match(/^[a-zA-Z]:\//)) {
                         // For Windows, file:// URLs should be in the format file:///C:/path/to/file
-                        possiblePaths.push(`file:///${fullPath}/${src.replace(/\\/g, '/')}`)
+                        possiblePaths.push(`file:///${fullPath}/${src.replace(/[\\]/g, '/')}`)
                       } else {
                         // For other paths
-                        possiblePaths.push(`file:///${fullPath}/${src.replace(/\\/g, '/')}`)
+                        possiblePaths.push(`file:///${fullPath}/${src.replace(/[\\]/g, '/')}`)
                       }
                     }
                     
@@ -112,23 +112,32 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                       // Handle Windows paths properly
                       let docFullPath = documentsDir
                       // Convert backslashes to forward slashes
-                      docFullPath = docFullPath.replace(/\\/g, '/')
+                      docFullPath = docFullPath.replace(/[\\]/g, '/')
                       // For Windows paths like C:/Users/...
                       if (docFullPath.match(/^[a-zA-Z]:\//)) {
                         // For Windows, file:// URLs should be in the format file:///C:/path/to/file
-                        possiblePaths.push(`file:///${docFullPath}/${src.replace(/\\/g, '/')}`)
+                        possiblePaths.push(`file:///${docFullPath}/${src.replace(/[\\]/g, '/')}`)
                       } else {
                         // For other paths
-                        possiblePaths.push(`file:///${docFullPath}/${src.replace(/\\/g, '/')}`)
+                        possiblePaths.push(`file:///${docFullPath}/${src.replace(/[\\]/g, '/')}`)
                       }
                     }
                     
                     // Try direct assets path with absolute path
                     if (documentsDir) {
                       let docFullPath = documentsDir
-                      docFullPath = docFullPath.replace(/\\/g, '/')
+                      docFullPath = docFullPath.replace(/[\\]/g, '/')
                       if (docFullPath.match(/^[a-zA-Z]:\//)) {
                         possiblePaths.push(`file:///${docFullPath}/assets/${imageName}`)
+                      }
+                    }
+                    
+                    // Try assets directory in the same folder as the document
+                    if (effectiveDocDir) {
+                      let assetsPath = effectiveDocDir
+                      assetsPath = assetsPath.replace(/[\\]/g, '/')
+                      if (assetsPath.match(/^[a-zA-Z]:\//)) {
+                        possiblePaths.push(`file:///${assetsPath}/assets/${imageName}`)
                       }
                     }
                     
