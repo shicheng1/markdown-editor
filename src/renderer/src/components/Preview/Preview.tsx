@@ -46,17 +46,47 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                   if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file://')) {
                     // Generate all possible paths upfront
                     const possiblePaths = []
+                    const imageName = src.split('/').pop() || src.split('\\').pop() || 'image.png'
                     
                     // Try with effectiveDocDir if available (most likely to work)
                     if (effectiveDocDir) {
-                      const fullPath = `${effectiveDocDir.replace(/\\/g, '/')}/${src.replace(/\\/g, '/')}`
-                      possiblePaths.push(`file:///${fullPath}`)
+                      // Handle Windows paths properly
+                      let fullPath = effectiveDocDir
+                      // Convert backslashes to forward slashes
+                      fullPath = fullPath.replace(/\\/g, '/')
+                      // For Windows paths like C:/Users/...
+                      if (fullPath.match(/^[a-zA-Z]:\//)) {
+                        // For Windows, file:// URLs should be in the format file:///C:/path/to/file
+                        possiblePaths.push(`file:///${fullPath}/${src.replace(/\\/g, '/')}`)
+                      } else {
+                        // For other paths
+                        possiblePaths.push(`file:///${fullPath}/${src.replace(/\\/g, '/')}`)
+                      }
                     }
                     
                     // Try with absolute path to documents directory
                     if (documentsDir) {
-                      const docFullPath = `${documentsDir.replace(/\\/g, '/')}/${src.replace(/\\/g, '/')}`
-                      possiblePaths.push(`file:///${docFullPath}`)
+                      // Handle Windows paths properly
+                      let docFullPath = documentsDir
+                      // Convert backslashes to forward slashes
+                      docFullPath = docFullPath.replace(/\\/g, '/')
+                      // For Windows paths like C:/Users/...
+                      if (docFullPath.match(/^[a-zA-Z]:\//)) {
+                        // For Windows, file:// URLs should be in the format file:///C:/path/to/file
+                        possiblePaths.push(`file:///${docFullPath}/${src.replace(/\\/g, '/')}`)
+                      } else {
+                        // For other paths
+                        possiblePaths.push(`file:///${docFullPath}/${src.replace(/\\/g, '/')}`)
+                      }
+                    }
+                    
+                    // Try direct assets path with absolute path
+                    if (documentsDir) {
+                      let docFullPath = documentsDir
+                      docFullPath = docFullPath.replace(/\\/g, '/')
+                      if (docFullPath.match(/^[a-zA-Z]:\//)) {
+                        possiblePaths.push(`file:///${docFullPath}/assets/${imageName}`)
+                      }
                     }
                     
                     // Try relative path
@@ -66,7 +96,10 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                     possiblePaths.push(`./${src}`)
                     
                     // Try with assets directory in current directory
-                    possiblePaths.push(`./assets/${src.split('/').pop()}`)
+                    possiblePaths.push(`./assets/${imageName}`)
+                    
+                    // Try with absolute path using C drive (common Windows path)
+                    possiblePaths.push(`file:///C:/Users/${process.env.USERNAME || 'User'}/Documents/assets/${imageName}`)
                     
                     // Create a stateful component for handling image loading
                     const ImageWithFallback = React.memo(({ paths, alt, src, ...imgProps }: { paths: string[]; alt: string; src: string; [key: string]: any }) => {
