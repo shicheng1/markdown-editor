@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect } from 'react'
+import React, { forwardRef, useState, useEffect, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -6,6 +6,49 @@ import rehypeHighlight from 'rehype-highlight'
 import 'highlight.js/styles/github.css'
 import '../../assets/styles/markdown.css'
 import './Preview.css'
+
+// ImageWithFallback component defined outside to avoid recreation on each render
+const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: string[]; alt: string; src: string; [key: string]: any }) => {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [allFailed, setAllFailed] = useState(false)
+  
+  const handleError = () => {
+    if (currentIndex < paths.length - 1) {
+      setCurrentIndex(prev => prev + 1)
+    } else {
+      setAllFailed(true)
+    }
+  }
+  
+  if (allFailed) {
+    return (
+      <div style={{ 
+        width: '200px', 
+        height: '100px', 
+        backgroundColor: '#f0f0f0', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        border: '1px solid #ccc'
+      }}>
+        <span style={{ color: '#666', fontSize: '12px' }}>
+          图片未找到: {src}
+        </span>
+      </div>
+    )
+  }
+  
+  return (
+    <img 
+      src={paths[currentIndex]} 
+      alt={alt || ''} 
+      loading="lazy" 
+      onError={handleError}
+      style={{ display: 'block' }}
+      {...imgProps} 
+    />
+  )
+})
 
 interface PreviewProps {
   content: string
@@ -99,50 +142,7 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                     possiblePaths.push(`./assets/${imageName}`)
                     
                     // Try with absolute path using C drive (common Windows path)
-                    possiblePaths.push(`file:///C:/Users/${process.env.USERNAME || 'User'}/Documents/assets/${imageName}`)
-                    
-                    // Create a stateful component for handling image loading
-                    const ImageWithFallback = React.memo(({ paths, alt, src, ...imgProps }: { paths: string[]; alt: string; src: string; [key: string]: any }) => {
-                      const [currentIndex, setCurrentIndex] = useState(0)
-                      const [allFailed, setAllFailed] = useState(false)
-                      
-                      const handleError = () => {
-                        if (currentIndex < paths.length - 1) {
-                          setCurrentIndex(prev => prev + 1)
-                        } else {
-                          setAllFailed(true)
-                        }
-                      }
-                      
-                      if (allFailed) {
-                        return (
-                          <div style={{ 
-                            width: '200px', 
-                            height: '100px', 
-                            backgroundColor: '#f0f0f0', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            border: '1px solid #ccc'
-                          }}>
-                            <span style={{ color: '#666', fontSize: '12px' }}>
-                              图片未找到: {src}
-                            </span>
-                          </div>
-                        )
-                      }
-                      
-                      return (
-                        <img 
-                          src={paths[currentIndex]} 
-                          alt={alt || ''} 
-                          loading="lazy" 
-                          onError={handleError}
-                          style={{ display: 'block' }}
-                          {...imgProps} 
-                        />
-                      )
-                    })
+                    possiblePaths.push(`file:///C:/Users/User/Documents/assets/${imageName}`)
                     
                     return <ImageWithFallback paths={possiblePaths} alt={alt || ''} src={src} {...props} />
                   }
