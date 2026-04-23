@@ -104,12 +104,12 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                       // For Windows paths like C:/Users/...
                       if (fullPath.match(/^[a-zA-Z]:\//)) {
                         // For Windows, file:// URLs should be in the format file:///C:/path/to/file
-                        const filePath = `file:///${fullPath}/${src.replace(/[\\]/g, '/')}`
+                        const filePath = `safe-file://${fullPath}/${src.replace(/[\\]/g, '/')}`
                         possiblePaths.push(filePath)
                         console.log('添加路径1:', filePath)
                       } else {
                         // For other paths
-                        const filePath = `file:///${fullPath}/${src.replace(/[\\]/g, '/')}`
+                        const filePath = `safe-file://${fullPath}/${src.replace(/[\\]/g, '/')}`
                         possiblePaths.push(filePath)
                         console.log('添加路径2:', filePath)
                       }
@@ -124,12 +124,12 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                       // For Windows paths like C:/Users/...
                       if (docFullPath.match(/^[a-zA-Z]:\//)) {
                         // For Windows, file:// URLs should be in the format file:///C:/path/to/file
-                        const filePath = `file:///${docFullPath}/${src.replace(/[\\]/g, '/')}`
+                        const filePath = `safe-file://${docFullPath}/${src.replace(/[\\]/g, '/')}`
                         possiblePaths.push(filePath)
                         console.log('添加路径3:', filePath)
                       } else {
                         // For other paths
-                        const filePath = `file:///${docFullPath}/${src.replace(/[\\]/g, '/')}`
+                        const filePath = `safe-file://${docFullPath}/${src.replace(/[\\]/g, '/')}`
                         possiblePaths.push(filePath)
                         console.log('添加路径4:', filePath)
                       }
@@ -140,7 +140,7 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                       let docFullPath = documentsDir
                       docFullPath = docFullPath.replace(/[\\]/g, '/')
                       if (docFullPath.match(/^[a-zA-Z]:\//)) {
-                        const filePath = `file:///${docFullPath}/assets/${imageName}`
+                        const filePath = `safe-file://${docFullPath}/assets/${imageName}`
                         possiblePaths.push(filePath)
                         console.log('添加路径5:', filePath)
                       }
@@ -151,7 +151,7 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                       let assetsPath = effectiveDocDir
                       assetsPath = assetsPath.replace(/[\\]/g, '/')
                       if (assetsPath.match(/^[a-zA-Z]:\//)) {
-                        const filePath = `file:///${assetsPath}/assets/${imageName}`
+                        const filePath = `safe-file://${assetsPath}/assets/${imageName}`
                         possiblePaths.push(filePath)
                         console.log('添加路径6:', filePath)
                       }
@@ -170,8 +170,8 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                     console.log('添加路径9:', `./assets/${imageName}`)
                     
                     // Try with absolute path using C drive (common Windows path)
-                    possiblePaths.push(`file:///C:/Users/User/Documents/assets/${imageName}`)
-                    console.log('添加路径10:', `file:///C:/Users/User/Documents/assets/${imageName}`)
+                    possiblePaths.push(`safe-file://C:/Users/User/Documents/assets/${imageName}`)
+                    console.log('添加路径10:', `safe-file://C:/Users/User/Documents/assets/${imageName}`)
                     
                     console.log('所有可能路径:', possiblePaths)
                     

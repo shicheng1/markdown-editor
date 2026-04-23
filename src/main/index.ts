@@ -192,7 +192,18 @@ ipcMain.on('window:set-document-edited', (event, edited: boolean) => {
   win?.setDocumentEdited(edited)
 })
 
+// 注册自定义协议来加载本地文件
+import { protocol } from 'electron'
+
 app.whenReady().then(() => {
+  // 注册自定义协议 'safe-file' 来安全加载本地文件
+  protocol.registerFileProtocol('safe-file', (request, callback) => {
+    const url = request.url.replace('safe-file://', '')
+    // 解码URL编码的路径
+    const decodedUrl = decodeURIComponent(url)
+    callback(decodedUrl)
+  })
+
   log('app.whenReady() resolved, creating window...')
   try {
     windowManager.createWindow()
