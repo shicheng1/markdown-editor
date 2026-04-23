@@ -10,23 +10,23 @@ import './Preview.css'
 // ImageWithFallback component defined outside to avoid recreation on each render
 const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: string[]; alt: string; src: string; [key: string]: any }) => {
   const currentIndexRef = useRef(0)
-  const allFailedRef = useRef(false)
+  const [allFailed, setAllFailed] = useState(false)
+  const imgRef = useRef<HTMLImageElement>(null)
   
   const handleError = () => {
     if (currentIndexRef.current < paths.length - 1) {
       currentIndexRef.current += 1
-      // 重新渲染组件以尝试下一个路径
-      forceUpdate()
+      // 直接修改img元素的src属性，避免重新渲染组件
+      if (imgRef.current) {
+        imgRef.current.src = paths[currentIndexRef.current]
+      }
     } else {
-      allFailedRef.current = true
-      forceUpdate()
+      // 当所有路径都失败时，更新状态以触发重新渲染
+      setAllFailed(true)
     }
   }
   
-  // 简单的forceUpdate实现
-  const [, forceUpdate] = useState({})
-  
-  if (allFailedRef.current) {
+  if (allFailed) {
     return (
       <div style={{ 
         width: '200px', 
@@ -46,6 +46,7 @@ const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: strin
   
   return (
     <img 
+      ref={imgRef}
       src={paths[currentIndexRef.current]} 
       alt={alt || ''} 
       loading="lazy" 
@@ -95,93 +96,72 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                   if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file://')) {
                     // 使用useMemo缓存路径计算，避免每次渲染都重新创建数组
                     const possiblePaths = React.useMemo(() => {
-                      console.log('处理图片路径:', src)
-                      const paths = []
+                      // 使用Set去重，确保每个路径只尝试一次
+                      const pathsSet = new Set<string>()
                       const imageName = src.split('/').pop() || src.split('\\').pop() || 'image.png'
-                      console.log('图片名称:', imageName)
                       
-                      // Try with effectiveDocDir if available (most likely to work)
-                      console.log('effectiveDocDir:', effectiveDocDir)
-                      console.log('documentsDir:', documentsDir)
-                      if (effectiveDocDir) {
-                        // Handle Windows paths properly
-                        let fullPath = effectiveDocDir
-                        // Convert backslashes to forward slashes
-                        fullPath = fullPath.replace(/[\\]/g, '/')
-                        // For Windows paths like C:/Users/...
-                        if (fullPath.match(/^[a-zA-Z]:\//)) {
-                          // For Windows, file:// URLs should be in the format file:///C:/path/to/file
-                          const filePath = `safe-file://${fullPath}/${src.replace(/[\\]/g, '/')}`
-                          paths.push(filePath)
-                          console.log('添加路径1:', filePath)
+                      // 辅助函数：添加路径到Set中
+                      const addPath = (path: string) => {
+                        if (path && !pathsSet.has(path)) {
+                          pathsSet.add(path)
+                        }
+                      }
+                      
+                      // 辅助函数：生成正确格式的file://路径
+                      const createFileUrl = (basePath: string, relativePath: string) => {
+                        let normalizedPath = basePath.replace(/[\\]/g, '/')
+                        let normalizedRelative = relativePath.replace(/[\\]/g, '/')
+                        
+                        // 确保路径分隔符正确
+                        if (!normalizedPath.endsWith('/') && !normalizedRelative.startsWith('/')) {
+                          normalizedPath += '/'
+                        } else if (normalizedPath.endsWith('/') && normalizedRelative.startsWith('/')) {
+                          normalizedRelative = normalizedRelative.substring(1)
+                        }
+                        
+                        // 生成正确的file:// URL格式
+                        if (normalizedPath.match(/^[a-zA-Z]:\//)) {
+                          // Windows路径
+                          return `file:///${normalizedPath}${normalizedRelative}`
                         } else {
-                          // For other paths
-                          const filePath = `safe-file://${fullPath}/${src.replace(/[\\]/g, '/')}`
-                          paths.push(filePath)
-                          console.log('添加路径2:', filePath)
+                          // 其他路径
+                          return `file://${normalizedPath}${normalizedRelative}`
                         }
                       }
                       
-                      // Try with absolute path to documents directory
-                      if (documentsDir) {
-                        // Handle Windows paths properly
-                        let docFullPath = documentsDir
-                        // Convert backslashes to forward slashes
-                        docFullPath = docFullPath.replace(/[\\]/g, '/')
-                        // For Windows paths like C:/Users/...
-                        if (docFullPath.match(/^[a-zA-Z]:\//)) {
-                          // For Windows, file:// URLs should be in the format file:///C:/path/to/file
-                          const filePath = `safe-file://${docFullPath}/${src.replace(/[\\]/g, '/')}`
-                          paths.push(filePath)
-                          console.log('添加路径3:', filePath)
-                        } else {
-                          // For other paths
-                          const filePath = `safe-file://${docFullPath}/${src.replace(/[\\]/g, '/')}`
-                          paths.push(filePath)
-                          console.log('添加路径4:', filePath)
-                        }
-                      }
+                      // 1. 尝试相对路径（最基本的情况）
+                      addPath(src)
                       
-                      // Try direct assets path with absolute path
-                      if (documentsDir) {
-                        let docFullPath = documentsDir
-                        docFullPath = docFullPath.replace(/[\\]/g, '/')
-                        if (docFullPath.match(/^[a-zA-Z]:\//)) {
-                          const filePath = `safe-file://${docFullPath}/assets/${imageName}`
-                          paths.push(filePath)
-                          console.log('添加路径5:', filePath)
-                        }
-                      }
+                      // 2. 尝试当前目录相对路径
+                      addPath(`./${src}`)
                       
-                      // Try assets directory in the same folder as the document
+                      // 3. 尝试文档目录（最可能成功的路径）
                       if (effectiveDocDir) {
-                        let assetsPath = effectiveDocDir
-                        assetsPath = assetsPath.replace(/[\\]/g, '/')
-                        if (assetsPath.match(/^[a-zA-Z]:\//)) {
-                          const filePath = `safe-file://${assetsPath}/assets/${imageName}`
-                          paths.push(filePath)
-                          console.log('添加路径6:', filePath)
-                        }
+                        addPath(createFileUrl(effectiveDocDir, src))
+                        // 尝试文档目录下的assets文件夹
+                        addPath(createFileUrl(effectiveDocDir, `assets/${imageName}`))
                       }
                       
-                      // Try relative path
-                      paths.push(src)
-                      console.log('添加路径7:', src)
+                      // 4. 尝试默认文档目录
+                      if (documentsDir && documentsDir !== effectiveDocDir) {
+                        addPath(createFileUrl(documentsDir, src))
+                        // 尝试默认文档目录下的assets文件夹
+                        addPath(createFileUrl(documentsDir, `assets/${imageName}`))
+                      }
                       
-                      // Try with current directory (relative path)
-                      paths.push(`./${src}`)
-                      console.log('添加路径8:', `./${src}`)
+                      // 5. 尝试当前目录下的assets文件夹
+                      addPath(`./assets/${imageName}`)
                       
-                      // Try with assets directory in current directory
-                      paths.push(`./assets/${imageName}`)
-                      console.log('添加路径9:', `./assets/${imageName}`)
+                      // 6. 尝试上级目录相对路径
+                      addPath(`../${src}`)
+                      addPath(`../assets/${imageName}`)
                       
-                      // Try with absolute path using C drive (common Windows path)
-                      paths.push(`safe-file://C:/Users/User/Documents/assets/${imageName}`)
-                      console.log('添加路径10:', `safe-file://C:/Users/User/Documents/assets/${imageName}`)
+                      // 7. 尝试上上级目录相对路径
+                      addPath(`../../${src}`)
+                      addPath(`../../assets/${imageName}`)
                       
-                      console.log('所有可能路径:', paths)
-                      return paths
+                      // 转换Set为数组并返回
+                      return Array.from(pathsSet)
                     }, [src, effectiveDocDir, documentsDir])
                     
                     return <ImageWithFallback paths={possiblePaths} alt={alt || ''} src={src} {...props} />

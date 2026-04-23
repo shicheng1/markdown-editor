@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import * as fs from 'fs'
+import { safeJoin, getFileName, resolveRelativePath } from './utils/pathUtils'
 import { windowManager } from './windowManager'
 import { buildMenu } from './menu'
 
@@ -113,21 +114,21 @@ ipcMain.handle('fs:readImageAsBase64', async (_event, filePath: string) => {
 ipcMain.handle('fs:copyImageToAssets', async (_event, sourcePath: string, docDir: string) => {
   console.log('copyImageToAssets 被调用，参数:', { sourcePath, docDir })
   try {
-    const assetsDir = join(docDir, 'assets')
+    const assetsDir = safeJoin(docDir, 'assets')
     console.log('assetsDir:', assetsDir)
     if (!fs.existsSync(assetsDir)) {
       console.log('创建 assets 目录:', assetsDir)
       fs.mkdirSync(assetsDir, { recursive: true })
     }
-    let fileName = sourcePath.split(/[\\/]/).pop() || 'image.png'
-    let destPath = join(assetsDir, fileName)
+    let fileName = getFileName(sourcePath) || 'image.png'
+    let destPath = safeJoin(assetsDir, fileName)
     // Handle duplicate filenames
     let counter = 1
     const baseName = fileName.replace(/\.[^.]+$/, '')
     const ext = fileName.includes('.') ? '.' + fileName.split('.').pop() : '.png'
     while (fs.existsSync(destPath)) {
       fileName = `${baseName}-${counter}${ext}`
-      destPath = join(assetsDir, fileName)
+      destPath = safeJoin(assetsDir, fileName)
       counter++
     }
     console.log('复制文件:', sourcePath, '到:', destPath)
@@ -143,7 +144,7 @@ ipcMain.handle('fs:copyImageToAssets', async (_event, sourcePath: string, docDir
 
 ipcMain.handle('fs:resolveImagePath', async (_event, relativePath: string, docDir: string) => {
   try {
-    const fullPath = join(docDir, relativePath)
+    const fullPath = resolveRelativePath(relativePath, docDir)
     const exists = fs.existsSync(fullPath)
     return { success: true, fullPath, exists }
   } catch (error) {
@@ -200,10 +201,23 @@ import { protocol } from 'electron'
 app.whenReady().then(() => {
   // 注册自定义协议 'safe-file' 来安全加载本地文件
   protocol.registerFileProtocol('safe-file', (request, callback) => {
-    const url = request.url.replace('safe-file://', '')
-    // 解码URL编码的路径
-    const decodedUrl = decodeURIComponent(url)
-    callback(decodedUrl)
+    try {
+      const url = request.url.replace('safe-file://', '')
+      // 解码URL编码的路径
+      const decodedUrl = decodeURIComponent(url)
+      // 确保路径是绝对路径
+      const absolutePath = decodedUrl.startsWith('/') ? decodedUrl : decodedUrl
+      // 检查文件是否存在
+      if (fs.existsSync(absolutePath)) {
+        callback(absolutePath)
+      } else {
+        log(`File not found: ${absolutePath}`)
+        callback({ error: -6 }) // NET_ERROR(FILE_NOT_FOUND, -6)
+      }
+    } catch (error) {
+      log(`Error handling safe-file protocol: ${error}`)
+      callback({ error: -2 }) // NET_ERROR(FAILED, -2)
+    }
   })
 
   log('app.whenReady() resolved, creating window...')
