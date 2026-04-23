@@ -9,19 +9,19 @@ import './Preview.css'
 
 // ImageWithFallback component defined outside to avoid recreation on each render
 const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: string[]; alt: string; src: string; [key: string]: any }) => {
-  const currentIndexRef = useRef(0)
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [allFailed, setAllFailed] = useState(false)
-  const imgRef = useRef<HTMLImageElement>(null)
+  
+  // 当paths变化时，重置状态
+  useEffect(() => {
+    setCurrentIndex(0)
+    setAllFailed(false)
+  }, [paths])
   
   const handleError = () => {
-    if (currentIndexRef.current < paths.length - 1) {
-      currentIndexRef.current += 1
-      // 直接修改img元素的src属性，避免重新渲染组件
-      if (imgRef.current) {
-        imgRef.current.src = paths[currentIndexRef.current]
-      }
+    if (currentIndex < paths.length - 1) {
+      setCurrentIndex(prev => prev + 1)
     } else {
-      // 当所有路径都失败时，更新状态以触发重新渲染
       setAllFailed(true)
     }
   }
@@ -46,8 +46,7 @@ const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: strin
   
   return (
     <img 
-      ref={imgRef}
-      src={paths[currentIndexRef.current]} 
+      src={paths[currentIndex]} 
       alt={alt || ''} 
       loading="lazy" 
       onError={handleError}
@@ -119,13 +118,13 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                           normalizedRelative = normalizedRelative.substring(1)
                         }
                         
-                        // 生成正确的file:// URL格式
+                        // 生成正确的safe-file:// URL格式
                         if (normalizedPath.match(/^[a-zA-Z]:\//)) {
                           // Windows路径
-                          return `file:///${normalizedPath}${normalizedRelative}`
+                          return `safe-file://${normalizedPath}${normalizedRelative}`
                         } else {
                           // 其他路径
-                          return `file://${normalizedPath}${normalizedRelative}`
+                          return `safe-file://${normalizedPath}${normalizedRelative}`
                         }
                       }
                       
