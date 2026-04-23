@@ -164,14 +164,16 @@ ipcMain.handle('fs:mkdir', async (_event, dirPath: string) => {
 
 ipcMain.handle('fs:getDefaultDir', async () => {
   try {
-    const documentsPath = app.getPath('documents')
+    // 使用应用的用户数据目录，避免C盘权限问题
+    const userDataPath = app.getPath('userData')
+    const imagesDir = join(userDataPath, 'images')
     // 确保目录存在
-    if (!fs.existsSync(documentsPath)) {
-      fs.mkdirSync(documentsPath, { recursive: true })
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true })
     }
-    return { dir: documentsPath }
+    return { dir: imagesDir }
   } catch (error) {
-    // 如果获取文档目录失败，返回当前工作目录
+    // 如果获取用户数据目录失败，返回当前工作目录
     return { dir: process.cwd() }
   }
 })
