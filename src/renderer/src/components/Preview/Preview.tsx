@@ -9,24 +9,27 @@ import './Preview.css'
 
 // ImageWithFallback component defined outside to avoid recreation on each render
 const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: string[]; alt: string; src: string; [key: string]: any }) => {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [allFailed, setAllFailed] = useState(false)
+  const currentIndexRef = useRef(0)
+  const allFailedRef = useRef(false)
+  const [, forceUpdate] = useState({})
   
   // 当paths变化时，重置状态
   useEffect(() => {
-    setCurrentIndex(0)
-    setAllFailed(false)
+    currentIndexRef.current = 0
+    allFailedRef.current = false
   }, [paths])
   
   const handleError = () => {
-    if (currentIndex < paths.length - 1) {
-      setCurrentIndex(prev => prev + 1)
+    if (currentIndexRef.current < paths.length - 1) {
+      currentIndexRef.current += 1
+      forceUpdate({})
     } else {
-      setAllFailed(true)
+      allFailedRef.current = true
+      forceUpdate({})
     }
   }
   
-  if (allFailed) {
+  if (allFailedRef.current) {
     return (
       <div style={{ 
         width: '200px', 
@@ -46,7 +49,7 @@ const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: strin
   
   return (
     <img 
-      src={paths[currentIndex]} 
+      src={paths[currentIndexRef.current]} 
       alt={alt || ''} 
       loading="lazy" 
       onError={handleError}
@@ -59,6 +62,76 @@ const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: strin
 interface PreviewProps {
   content: string
   docDir?: string
+}
+
+// 辅助函数：生成正确格式的safe-file://路径
+const createSafeFileUrl = (basePath: string, relativePath: string) => {
+  let normalizedPath = basePath.replace(/[\\]/g, '/')
+  let normalizedRelative = relativePath.replace(/[\\]/g, '/')
+  
+  // 确保路径分隔符正确
+  if (!normalizedPath.endsWith('/') && !normalizedRelative.startsWith('/')) {
+    normalizedPath += '/'
+  } else if (normalizedPath.endsWith('/') && normalizedRelative.startsWith('/')) {
+    normalizedRelative = normalizedRelative.substring(1)
+  }
+  
+  // 生成正确的safe-file:// URL格式
+  if (normalizedPath.match(/^[a-zA-Z]:\//)) {
+    // Windows路径
+    return `safe-file://${normalizedPath}${normalizedRelative}`
+  } else {
+    // 其他路径
+    return `safe-file://${normalizedPath}${normalizedRelative}`
+  }
+}
+
+// 辅助函数：生成可能的图片路径数组
+const generatePossiblePaths = (src: string, effectiveDocDir: string, documentsDir: string) => {
+  // 使用Set去重，确保每个路径只尝试一次
+  const pathsSet = new Set<string>()
+  const imageName = src.split('/').pop() || src.split('\\').pop() || 'image.png'
+  
+  // 辅助函数：添加路径到Set中
+  const addPath = (path: string) => {
+    if (path && !pathsSet.has(path)) {
+      pathsSet.add(path)
+    }
+  }
+  
+  // 1. 尝试相对路径（最基本的情况）
+  addPath(src)
+  
+  // 2. 尝试当前目录相对路径
+  addPath(`./${src}`)
+  
+  // 3. 尝试文档目录（最可能成功的路径）
+  if (effectiveDocDir) {
+    addPath(createSafeFileUrl(effectiveDocDir, src))
+    // 尝试文档目录下的assets文件夹
+    addPath(createSafeFileUrl(effectiveDocDir, `assets/${imageName}`))
+  }
+  
+  // 4. 尝试默认文档目录
+  if (documentsDir && documentsDir !== effectiveDocDir) {
+    addPath(createSafeFileUrl(documentsDir, src))
+    // 尝试默认文档目录下的assets文件夹
+    addPath(createSafeFileUrl(documentsDir, `assets/${imageName}`))
+  }
+  
+  // 5. 尝试当前目录下的assets文件夹
+  addPath(`./assets/${imageName}`)
+  
+  // 6. 尝试上级目录相对路径
+  addPath(`../${src}`)
+  addPath(`../assets/${imageName}`)
+  
+  // 7. 尝试上上级目录相对路径
+  addPath(`../../${src}`)
+  addPath(`../../assets/${imageName}`)
+  
+  // 转换Set为数组并返回
+  return Array.from(pathsSet)
 }
 
 const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, ref) => {
@@ -93,76 +166,7 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                 ),
                 img: ({ src, alt, ...props }) => {
                   if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file://')) {
-                    // 使用useMemo缓存路径计算，避免每次渲染都重新创建数组
-                    const possiblePaths = React.useMemo(() => {
-                      // 使用Set去重，确保每个路径只尝试一次
-                      const pathsSet = new Set<string>()
-                      const imageName = src.split('/').pop() || src.split('\\').pop() || 'image.png'
-                      
-                      // 辅助函数：添加路径到Set中
-                      const addPath = (path: string) => {
-                        if (path && !pathsSet.has(path)) {
-                          pathsSet.add(path)
-                        }
-                      }
-                      
-                      // 辅助函数：生成正确格式的file://路径
-                      const createFileUrl = (basePath: string, relativePath: string) => {
-                        let normalizedPath = basePath.replace(/[\\]/g, '/')
-                        let normalizedRelative = relativePath.replace(/[\\]/g, '/')
-                        
-                        // 确保路径分隔符正确
-                        if (!normalizedPath.endsWith('/') && !normalizedRelative.startsWith('/')) {
-                          normalizedPath += '/'
-                        } else if (normalizedPath.endsWith('/') && normalizedRelative.startsWith('/')) {
-                          normalizedRelative = normalizedRelative.substring(1)
-                        }
-                        
-                        // 生成正确的safe-file:// URL格式
-                        if (normalizedPath.match(/^[a-zA-Z]:\//)) {
-                          // Windows路径
-                          return `safe-file://${normalizedPath}${normalizedRelative}`
-                        } else {
-                          // 其他路径
-                          return `safe-file://${normalizedPath}${normalizedRelative}`
-                        }
-                      }
-                      
-                      // 1. 尝试相对路径（最基本的情况）
-                      addPath(src)
-                      
-                      // 2. 尝试当前目录相对路径
-                      addPath(`./${src}`)
-                      
-                      // 3. 尝试文档目录（最可能成功的路径）
-                      if (effectiveDocDir) {
-                        addPath(createFileUrl(effectiveDocDir, src))
-                        // 尝试文档目录下的assets文件夹
-                        addPath(createFileUrl(effectiveDocDir, `assets/${imageName}`))
-                      }
-                      
-                      // 4. 尝试默认文档目录
-                      if (documentsDir && documentsDir !== effectiveDocDir) {
-                        addPath(createFileUrl(documentsDir, src))
-                        // 尝试默认文档目录下的assets文件夹
-                        addPath(createFileUrl(documentsDir, `assets/${imageName}`))
-                      }
-                      
-                      // 5. 尝试当前目录下的assets文件夹
-                      addPath(`./assets/${imageName}`)
-                      
-                      // 6. 尝试上级目录相对路径
-                      addPath(`../${src}`)
-                      addPath(`../assets/${imageName}`)
-                      
-                      // 7. 尝试上上级目录相对路径
-                      addPath(`../../${src}`)
-                      addPath(`../../assets/${imageName}`)
-                      
-                      // 转换Set为数组并返回
-                      return Array.from(pathsSet)
-                    }, [src, effectiveDocDir, documentsDir])
-                    
+                    const possiblePaths = generatePossiblePaths(src, effectiveDocDir, documentsDir)
                     return <ImageWithFallback paths={possiblePaths} alt={alt || ''} src={src} {...props} />
                   }
                   return <img src={src} alt={alt || ''} loading="lazy" style={{ display: 'block' }} {...props} />
