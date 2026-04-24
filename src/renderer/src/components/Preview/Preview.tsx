@@ -7,63 +7,6 @@ import 'highlight.js/styles/github.css'
 import '../../assets/styles/markdown.css'
 import './Preview.css'
 
-// ImageWithFallback component defined outside to avoid recreation on each render
-const ImageWithFallback = memo(({ paths, alt, src, ...imgProps }: { paths: string[]; alt: string; src: string; [key: string]: any }) => {
-  const currentIndexRef = useRef(0)
-  const allFailedRef = useRef(false)
-  const [, forceUpdate] = useState({})
-  
-  // 当paths变化时，重置状态
-  useEffect(() => {
-    currentIndexRef.current = 0
-    allFailedRef.current = false
-  }, [paths])
-  
-  const handleError = () => {
-    if (currentIndexRef.current < paths.length - 1) {
-      currentIndexRef.current += 1
-      forceUpdate({})
-    } else {
-      allFailedRef.current = true
-      forceUpdate({})
-    }
-  }
-  
-  if (allFailedRef.current) {
-    return (
-      <div style={{ 
-        width: '200px', 
-        height: '100px', 
-        backgroundColor: '#f0f0f0', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        border: '1px solid #ccc'
-      }}>
-        <span style={{ color: '#666', fontSize: '12px' }}>
-          图片未找到: {src}
-        </span>
-      </div>
-    )
-  }
-  
-  return (
-    <img 
-      src={paths[currentIndexRef.current]} 
-      alt={alt || ''} 
-      loading="lazy" 
-      onError={handleError}
-      style={{ display: 'block' }}
-      {...imgProps} 
-    />
-  )
-})
-
-interface PreviewProps {
-  content: string
-  docDir?: string
-}
-
 // 辅助函数：生成正确格式的safe-file://路径
 const createSafeFileUrl = (basePath: string, relativePath: string) => {
   let normalizedPath = basePath.replace(/[\\]/g, '/')
@@ -86,52 +29,9 @@ const createSafeFileUrl = (basePath: string, relativePath: string) => {
   }
 }
 
-// 辅助函数：生成可能的图片路径数组
-const generatePossiblePaths = (src: string, effectiveDocDir: string, documentsDir: string) => {
-  // 使用Set去重，确保每个路径只尝试一次
-  const pathsSet = new Set<string>()
-  const imageName = src.split('/').pop() || src.split('\\').pop() || 'image.png'
-  
-  // 辅助函数：添加路径到Set中
-  const addPath = (path: string) => {
-    if (path && !pathsSet.has(path)) {
-      pathsSet.add(path)
-    }
-  }
-  
-  // 1. 尝试相对路径（最基本的情况）
-  addPath(src)
-  
-  // 2. 尝试当前目录相对路径
-  addPath(`./${src}`)
-  
-  // 3. 尝试文档目录（最可能成功的路径）
-  if (effectiveDocDir) {
-    addPath(createSafeFileUrl(effectiveDocDir, src))
-    // 尝试文档目录下的assets文件夹
-    addPath(createSafeFileUrl(effectiveDocDir, `assets/${imageName}`))
-  }
-  
-  // 4. 尝试默认文档目录
-  if (documentsDir && documentsDir !== effectiveDocDir) {
-    addPath(createSafeFileUrl(documentsDir, src))
-    // 尝试默认文档目录下的assets文件夹
-    addPath(createSafeFileUrl(documentsDir, `assets/${imageName}`))
-  }
-  
-  // 5. 尝试当前目录下的assets文件夹
-  addPath(`./assets/${imageName}`)
-  
-  // 6. 尝试上级目录相对路径
-  addPath(`../${src}`)
-  addPath(`../assets/${imageName}`)
-  
-  // 7. 尝试上上级目录相对路径
-  addPath(`../../${src}`)
-  addPath(`../../assets/${imageName}`)
-  
-  // 转换Set为数组并返回
-  return Array.from(pathsSet)
+interface PreviewProps {
+  content: string
+  docDir?: string
 }
 
 const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, ref) => {
@@ -150,6 +50,62 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
 
   const effectiveDocDir = docDir || defaultDir
 
+  // 创建自定义的img组件
+  const CustomImage = ({ src, alt, ...props }: { src: string; alt: string }) => {
+    const imgRef = useRef<HTMLImageElement>(null)
+    const currentIndexRef = useRef(0)
+    const imageName = src.split('/').pop() || src.split('\\').pop() || 'image.png'
+    
+    // 只在组件初始化时计算路径
+    const pathsRef = useRef<string[]>(() => {
+      const paths: string[] = []
+      
+      // 优先尝试文档目录
+      if (effectiveDocDir) {
+        paths.push(createSafeFileUrl(effectiveDocDir, src))
+        paths.push(createSafeFileUrl(effectiveDocDir, `assets/${imageName}`))
+      }
+      
+      // 然后尝试默认目录
+      if (documentsDir && documentsDir !== effectiveDocDir) {
+        paths.push(createSafeFileUrl(documentsDir, src))
+        paths.push(createSafeFileUrl(documentsDir, `assets/${imageName}`))
+      }
+      
+      // 最后尝试一些相对路径
+      paths.push(src)
+      paths.push(`./${src}`)
+      paths.push(`./assets/${imageName}`)
+      
+      return paths
+    }())
+
+    const handleError = () => {
+      if (currentIndexRef.current < pathsRef.current.length - 1) {
+        currentIndexRef.current += 1
+        if (imgRef.current) {
+          imgRef.current.src = pathsRef.current[currentIndexRef.current]
+        }
+      }
+    }
+
+    if (src.startsWith('http') || src.startsWith('data:') || src.startsWith('file://')) {
+      return <img src={src} alt={alt || ''} loading="lazy" style={{ display: 'block' }} {...props} />
+    }
+
+    return (
+      <img 
+        ref={imgRef}
+        src={pathsRef.current[0]} 
+        alt={alt || ''} 
+        loading="lazy" 
+        onError={handleError}
+        style={{ display: 'block' }}
+        {...props} 
+      />
+    )
+  }
+
   return (
     <div className="preview-container" ref={ref}>
       <div className="preview-content">
@@ -164,13 +120,7 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content, docDir }, r
                     {children}
                   </a>
                 ),
-                img: ({ src, alt, ...props }) => {
-                  if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file://')) {
-                    const possiblePaths = generatePossiblePaths(src, effectiveDocDir, documentsDir)
-                    return <ImageWithFallback paths={possiblePaths} alt={alt || ''} src={src} {...props} />
-                  }
-                  return <img src={src} alt={alt || ''} loading="lazy" style={{ display: 'block' }} {...props} />
-                },
+                img: CustomImage,
                 table: ({ children, ...props }) => (
                   <div className="table-wrapper">
                     <table {...props}>{children}</table>
