@@ -65,29 +65,27 @@ const Preview = forwardRef(function Preview(props, ref) {
     const currentIndexRef = useRef(0)
     const imageName = src.split('/').pop() || src.split('\\').pop() || 'image.png'
     
-    // 只在组件初始化时计算路径
-    const pathsRef = useRef(() => {
-      const paths = []
-      
-      // 优先尝试文档目录
-      if (effectiveDocDir) {
-        paths.push(createSafeFileUrl(effectiveDocDir, src))
-        paths.push(createSafeFileUrl(effectiveDocDir, `assets/${imageName}`))
-      }
-      
-      // 然后尝试默认目录
-      if (documentsDir && documentsDir !== effectiveDocDir) {
-        paths.push(createSafeFileUrl(documentsDir, src))
-        paths.push(createSafeFileUrl(documentsDir, `assets/${imageName}`))
-      }
-      
-      // 最后尝试一些相对路径
-      paths.push(src)
-      paths.push(`./${src}`)
-      paths.push(`./assets/${imageName}`)
-      
-      return paths
-    }())
+    // 计算路径
+    const paths = []
+    
+    // 优先尝试文档目录
+    if (effectiveDocDir) {
+      paths.push(createSafeFileUrl(effectiveDocDir, src))
+      paths.push(createSafeFileUrl(effectiveDocDir, `assets/${imageName}`))
+    }
+    
+    // 然后尝试默认目录
+    if (documentsDir && documentsDir !== effectiveDocDir) {
+      paths.push(createSafeFileUrl(documentsDir, src))
+      paths.push(createSafeFileUrl(documentsDir, `assets/${imageName}`))
+    }
+    
+    // 最后尝试一些相对路径
+    paths.push(src)
+    paths.push(`./${src}`)
+    paths.push(`./assets/${imageName}`)
+    
+    const pathsRef = useRef(paths)
 
     const handleError = () => {
       if (currentIndexRef.current < pathsRef.current.length - 1) {
