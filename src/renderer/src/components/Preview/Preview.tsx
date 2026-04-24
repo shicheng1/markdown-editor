@@ -34,7 +34,7 @@ interface PreviewProps {
   docDir?: string
 }
 
-const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content = '', docDir = '' }, ref) => {
+const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content = '', docDir = '' } = {}, ref) => {
   const [defaultDir, setDefaultDir] = useState<string>('')
   const [documentsDir, setDocumentsDir] = useState<string>('')
 
