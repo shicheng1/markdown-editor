@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect, memo, useRef } from 'react'
+import React, { forwardRef, useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -34,9 +34,12 @@ interface PreviewProps {
   docDir?: string
 }
 
-const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content = '', docDir = '' } = {}, ref) => {
-  const [defaultDir, setDefaultDir] = useState<string>('')
-  const [documentsDir, setDocumentsDir] = useState<string>('')
+const Preview = forwardRef(function Preview(props, ref) {
+  const content = props.content || ''
+  const docDir = props.docDir || ''
+  
+  const [defaultDir, setDefaultDir] = useState('')
+  const [documentsDir, setDocumentsDir] = useState('')
 
   useEffect(() => {
     // Always get default directory as fallback
@@ -51,14 +54,20 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content = '', docDir
   const effectiveDocDir = docDir || defaultDir
 
   // 创建自定义的img组件
-  const CustomImage = ({ src, alt, ...props }: { src: string; alt: string }) => {
-    const imgRef = useRef<HTMLImageElement>(null)
+  const CustomImage = function CustomImage(props) {
+    const src = props.src
+    const alt = props.alt || ''
+    const imgProps = { ...props }
+    delete imgProps.src
+    delete imgProps.alt
+    
+    const imgRef = useRef(null)
     const currentIndexRef = useRef(0)
     const imageName = src.split('/').pop() || src.split('\\').pop() || 'image.png'
     
     // 只在组件初始化时计算路径
-    const pathsRef = useRef<string[]>(() => {
-      const paths: string[] = []
+    const pathsRef = useRef(() => {
+      const paths = []
       
       // 优先尝试文档目录
       if (effectiveDocDir) {
@@ -90,18 +99,18 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content = '', docDir
     }
 
     if (src.startsWith('http') || src.startsWith('data:') || src.startsWith('file://')) {
-      return <img src={src} alt={alt || ''} loading="lazy" style={{ display: 'block' }} {...props} />
+      return <img src={src} alt={alt} loading="lazy" style={{ display: 'block' }} {...imgProps} />
     }
 
     return (
       <img 
         ref={imgRef}
-        src={pathsRef.current[0]} 
-        alt={alt || ''} 
-        loading="lazy" 
+        src={pathsRef.current[0]}
+        alt={alt}
+        loading="lazy"
         onError={handleError}
         style={{ display: 'block' }}
-        {...props} 
+        {...imgProps}
       />
     )
   }
@@ -115,17 +124,29 @@ const Preview = forwardRef<HTMLDivElement, PreviewProps>(({ content = '', docDir
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw, rehypeHighlight]}
               components={{
-                a: ({ href, children, ...props }) => (
-                  <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-                    {children}
-                  </a>
-                ),
+                a: function A(props) {
+                  const href = props.href
+                  const children = props.children
+                  const aProps = { ...props }
+                  delete aProps.href
+                  delete aProps.children
+                  return (
+                    <a href={href} target="_blank" rel="noopener noreferrer" {...aProps}>
+                      {children}
+                    </a>
+                  )
+                },
                 img: CustomImage,
-                table: ({ children, ...props }) => (
-                  <div className="table-wrapper">
-                    <table {...props}>{children}</table>
-                  </div>
-                )
+                table: function Table(props) {
+                  const children = props.children
+                  const tableProps = { ...props }
+                  delete tableProps.children
+                  return (
+                    <div className="table-wrapper">
+                      <table {...tableProps}>{children}</table>
+                    </div>
+                  )
+                }
               }}
             >
               {content}
